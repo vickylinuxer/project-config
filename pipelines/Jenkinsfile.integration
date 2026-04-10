@@ -1,0 +1,132 @@
+@Library('generic-cicd') _
+
+import com.linuxer.cicd.ConfigLoader
+import com.linuxer.cicd.PlatformFactory
+import com.linuxer.cicd.StageRunner
+
+def testProjects = [
+    'custom-firmware-test',
+    'zephyr-rtos-test',
+    'yocto-bsp-test',
+    'aosp-platform-test',
+]
+
+node('linux && docker && x86_64') {
+    def configDir
+
+    stage('Checkout') {
+        // 1. Checkout project-config (this repo) for configs
+        checkout scm
+        configDir = pwd()
+
+        // 2. Repo sync from integration-manifest for sources
+        withCredentials([usernamePassword(
+            credentialsId: 'forgejo-token',
+            usernameVariable: 'GIT_USER',
+            passwordVariable: 'GIT_PASS'
+        )]) {
+            sh '''#!/bin/bash
+                set -e
+                echo "machine forgejo login ${GIT_USER} password ${GIT_PASS}" > "${HOME}/.netrc"
+                chmod 600 "${HOME}/.netrc"
+
+                mkdir -p /mnt/workspace && cd /mnt/workspace
+                repo init -u "http://forgejo:3000/devuser/integration-manifest.git" -b main
+                repo sync -j4 --optimized-fetch --force-sync
+
+                rm -f "${HOME}/.netrc"
+
+                echo "=== Synced repos ==="
+                repo list
+            '''
+        }
+
+        // 3. AOSP checkout — parse integration-manifest/aosp.xml
+        sh '''#!/bin/bash
+            set -e
+            MANIFEST_FILE="/mnt/workspace/.repo/manifests/aosp.xml"
+            if [ ! -f "$MANIFEST_FILE" ]; then
+                echo "AOSP: aosp.xml not found, skipping AOSP checkout"
+                exit 0
+            fi
+
+            # Parse annotations from aosp.xml
+            get_annotation() {
+                sed -n "s/.*annotation.*name=\"$1\".*value=\"\\([^\"]*\\)\".*/\\1/p" "$MANIFEST_FILE" | head -1
+            }
+
+            # Get remote fetch URL and project revision
+            AOSP_FETCH=$(sed -n 's/.*remote name="aosp".*fetch="\\([^"]*\\)".*/\\1/p' "$MANIFEST_FILE" | head -1)
+            AOSP_PROJECT=$(sed -n 's/.*project.*name="\\([^"]*\\)".*remote="aosp".*/\\1/p' "$MANIFEST_FILE" | head -1)
+            AOSP_REVISION=$(sed -n 's/.*project.*revision="\\([^"]*\\)".*/\\1/p' "$MANIFEST_FILE" | head -1)
+            AOSP_SOURCE_DIR=$(get_annotation "source-dir")
+            AOSP_LOCAL_MANIFEST=$(get_annotation "local-manifest-url")
+            AOSP_SYNC_JOBS=$(get_annotation "sync-jobs")
+
+            AOSP_MANIFEST_URL="${AOSP_FETCH}/${AOSP_PROJECT}"
+            AOSP_SYNC_JOBS=${AOSP_SYNC_JOBS:-4}
+
+            if [ -z "$AOSP_SOURCE_DIR" ] || [ -z "$AOSP_MANIFEST_URL" ]; then
+                echo "AOSP: incomplete manifest metadata, skipping"
+                exit 0
+            fi
+
+            echo "=== AOSP Checkout ==="
+            echo "Source dir:      $AOSP_SOURCE_DIR"
+            echo "Manifest URL:    $AOSP_MANIFEST_URL"
+            echo "Manifest branch: $AOSP_REVISION"
+            echo "Local manifest:  $AOSP_LOCAL_MANIFEST"
+            echo "Sync jobs:       $AOSP_SYNC_JOBS"
+
+            mkdir -p "$AOSP_SOURCE_DIR"
+            cd "$AOSP_SOURCE_DIR"
+
+            if [ ! -d '.repo' ]; then
+                echo "Initializing AOSP repo..."
+                repo init -u "$AOSP_MANIFEST_URL" -b "$AOSP_REVISION"
+            fi
+
+            if [ -n "$AOSP_LOCAL_MANIFEST" ]; then
+                mkdir -p .repo/local_manifests
+                echo "Downloading local manifest..."
+                curl -fsSL -o .repo/local_manifests/manifest_brcm_rpi.xml "$AOSP_LOCAL_MANIFEST"
+            fi
+
+            echo "Running AOSP repo sync..."
+            repo sync -j${AOSP_SYNC_JOBS} --optimized-fetch --force-sync --no-clone-bundle || {
+                echo "WARNING: AOSP repo sync had errors, continuing with available sources"
+            }
+        '''
+    }
+
+    stage('Build') {
+        def builds = [:]
+
+        for (p in testProjects) {
+            def projectName = p
+            builds[projectName] = {
+                dir("/mnt/workspace/projects/${projectName}") {
+                    def cfgFile = "${configDir}/projects/${projectName}.yml"
+                    def config = new ConfigLoader(this).load([:], cfgFile)
+                    if (fileExists("${configDir}/stages/${projectName}")) {
+                        config._stagesDir = "${configDir}/stages/${projectName}"
+                    }
+                    def platforms = new PlatformFactory(this, config)
+                    def runner = new StageRunner(this, config, platforms)
+                    def dockerImage = config.environment?.docker?.image ?: ''
+                    def dockerArgs = config.environment?.docker?.args ?: ''
+
+                    if (dockerImage) {
+                        docker.image(dockerImage).inside(dockerArgs) {
+                            runner.run('build')
+                        }
+                    } else {
+                        runner.run('build')
+                    }
+                }
+            }
+        }
+
+        parallel builds
+    }
+}

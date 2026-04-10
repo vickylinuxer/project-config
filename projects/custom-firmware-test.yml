@@ -1,0 +1,27 @@
+project:
+  name: custom-firmware-test
+  type: cmake
+  buildType: ci
+
+environment:
+  agent: "linux docker x86_64"
+  timeout: 15
+  docker:
+    image: cmake-cross:latest
+    args: ""
+
+cmake:
+  buildDir: build
+  buildType: Release
+  toolchainFile: /opt/toolchains/aarch64-linux-gnu.cmake
+
+stages:
+  - checkout
+  - build
+  - deploy
+  - notify
+
+deploy:
+  env:
+    DEPLOY_TARGET: 192.168.17.193
+    DEPLOY_USER: devuser

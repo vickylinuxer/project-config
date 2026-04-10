@@ -1,0 +1,28 @@
+project:
+  name: yocto-bsp-test
+  type: yocto
+  buildType: ci
+
+environment:
+  agent: "linux docker x86_64"
+  timeout: 300
+  docker:
+    image: yocto-builder:latest
+    args: "-v /mnt/workspace:/mnt/workspace"
+
+yocto:
+  pokyDir: /mnt/workspace/yocto/poky
+  machine: raspberrypi4-64
+  distro: poky
+  image: core-image-minimal
+  buildDir: /mnt/workspace/yocto/build
+  dlDir: /mnt/workspace/cache/yocto/downloads
+  sstateDir: /mnt/workspace/cache/yocto/sstate
+  layers:
+    - name: meta-raspberrypi
+      dir: /mnt/workspace/yocto/meta-raspberrypi
+
+stages:
+  - checkout
+  - build
+  - notify
