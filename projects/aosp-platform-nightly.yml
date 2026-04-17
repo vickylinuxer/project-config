@@ -1,0 +1,27 @@
+project:
+  name: aosp-platform
+  type: aosp
+  buildType: nightly
+
+environment:
+  agent: "audioi-android"
+  timeout: 720
+  docker:
+    image: trialyq2ase.jfrog.io/docker-local/aosp-builder:latest
+    credentialId: artifactory-creds
+
+aosp:
+  buildScript: build-scripts/integration/aosp-build.sh
+
+artifacts:
+  type: artifactory
+  url: https://trialyq2ase.jfrog.io
+  credentialId: artifactory-creds
+  defaultRepo: test
+
+publish:
+  artifacts:
+    - pattern: "aosp/out/target/product/**/*.img"
+      repo: test
+
+stages: [checkout, build, publish, notify]

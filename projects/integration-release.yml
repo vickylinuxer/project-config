@@ -1,0 +1,33 @@
+mode: integration
+
+project:
+  name: integration-build
+  type: custom
+  buildType: release
+
+workspace: /var/jenkins/workspace/integration
+cleanWorkspace: true
+
+environment:
+  agent: "audioi-linux"
+  timeout: 720
+  minDiskGB: 50
+
+manifest:
+  url: http://forgejo:3000/audioi/integration-manifest.git
+  branch: main
+  reference: /mnt/workspace/mirrors/reference
+
+artifacts:
+  type: artifactory
+  url: https://trialyq2ase.jfrog.io
+  credentialId: artifactory-creds
+  defaultRepo: firmware-releases
+
+stages: [checkout, build, publish, notify]
+failFast: true
+
+subsystems:
+  - custom-firmware-release
+  - yocto-bsp-release
+  - aosp-platform-release

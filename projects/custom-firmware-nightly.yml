@@ -1,0 +1,29 @@
+project:
+  name: custom-firmware
+  type: custom
+  buildType: nightly
+
+environment:
+  agent: "audioi-custom"
+  timeout: 15
+  docker:
+    image: trialyq2ase.jfrog.io/docker-local/cmake-cross:latest
+    credentialId: artifactory-creds
+
+custom:
+  buildScript: build-scripts/integration/custom-build.sh
+
+artifacts:
+  type: artifactory
+  url: https://trialyq2ase.jfrog.io
+  credentialId: artifactory-creds
+  defaultRepo: test
+
+publish:
+  artifacts:
+    - pattern: "build/firmware"
+      repo: test
+    - pattern: "build/test_main"
+      repo: test
+
+stages: [checkout, build, publish, notify]
