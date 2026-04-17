@@ -11,7 +11,7 @@ environment:
     credentialId: artifactory-creds
 
 custom:
-  buildScript: build-scripts/component/cmake-build.sh
+  buildScript: build-scripts/integration/custom-build.sh
 
 artifacts:
   type: artifactory
