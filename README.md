@@ -6,19 +6,38 @@ YAML pipeline configurations for embedded CI/CD subsystems. Used by **generic-ci
 
 ```
 project-config/
-├── projects/                    # Active pipeline configs
-│   ├── integration.yml          #   integration build (manifest, subsystems)
-│   ├── custom-firmware.yml      #   CMake cross-compilation
-│   ├── yocto-bsp.yml            #   Yocto BitBake RPi4 BSP
-│   ├── aosp-platform.yml        #   AOSP raspberry-vanilla
-│   ├── yocto-sdk-app.yml        #   Yocto SDK application
-│   └── android-hal-module.yml   #   Android NDK HAL module
-└── templates/                   # Config templates for new projects
+├── projects/                           # Active pipeline configs
+│   ├── integration.yml                 #   CI integration build
+│   ├── integration-nightly.yml         #   Nightly integration build
+│   ├── integration-release.yml         #   Release integration build
+│   ├── custom-firmware.yml             #   CMake cross-compilation (ci)
+│   ├── custom-firmware-nightly.yml     #   CMake cross-compilation (nightly)
+│   ├── custom-firmware-release.yml     #   CMake cross-compilation (release)
+│   ├── yocto-bsp.yml                   #   Yocto BitBake RPi4 BSP (ci)
+│   ├── yocto-bsp-nightly.yml           #   Yocto BitBake RPi4 BSP (nightly)
+│   ├── yocto-bsp-release.yml           #   Yocto BitBake RPi4 BSP (release)
+│   ├── aosp-platform.yml               #   AOSP raspberry-vanilla (ci)
+│   ├── aosp-platform-nightly.yml       #   AOSP raspberry-vanilla (nightly)
+│   ├── aosp-platform-release.yml       #   AOSP raspberry-vanilla (release)
+│   ├── yocto-sdk-app.yml              #   Yocto SDK application (component)
+│   └── android-hal-module.yml         #   Android NDK HAL module (component)
+└── templates/                          # Config templates for new projects
     ├── integration.yml
     ├── component-yocto.yml
     ├── component-aosp.yml
     └── component-custom.yml
 ```
+
+## Build Types
+
+Each subsystem has configs per build type:
+
+| Build Type | Trigger | Retention | Publish | Notify |
+|------------|---------|-----------|---------|--------|
+| `ci` | Webhook | 20 builds | No | Failure only |
+| `nightly` | Cron (2 AM) | 14 builds | Yes | Failure + fixed |
+| `release` | Manual | All | Yes | Always |
+| `integration` | Cron (Sat 4 AM) | 10 builds | Yes | Failure + fixed |
 
 ## Integration Build
 
@@ -26,16 +45,20 @@ project-config/
 
 ```yaml
 mode: integration
+
+project:
+  name: integration-build
+  type: custom
+  buildType: integration
+
 workspace: /var/jenkins/workspace/integration
-cleanWorkspace: true
 
 manifest:
   url: <manifest-repo-url>
   branch: main
   reference: /mnt/workspace/mirrors/reference
 
-stages: [checkout, build, notify]
-failFast: true
+stages: [checkout, build, publish, notify]
 
 subsystems:
   - custom-firmware
@@ -43,7 +66,7 @@ subsystems:
   - aosp-platform
 ```
 
-Each subsystem name maps to a `projects/<name>.yml` file with its own build config, Docker image, and build script reference.
+Nightly and release variants (`integration-nightly.yml`, `integration-release.yml`) reference their own subsystem configs (e.g., `custom-firmware-nightly`, `yocto-bsp-release`).
 
 ## Subsystem Config
 
