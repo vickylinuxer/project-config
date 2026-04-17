@@ -1,0 +1,36 @@
+# Component pipeline: Application cross-compiled for embedded target
+# Uses cmake-cross image with aarch64 toolchain
+mode: component
+
+buildScripts:
+  url: https://git.example.com/org/build-scripts.git
+  branch: main
+
+project:
+  name: yocto-sdk-app
+  repoUrl: https://git.example.com/org/yocto-sdk-app.git
+  type: custom
+  buildType: ci
+
+workspace: /mnt/workspace
+
+environment:
+  agent: "audioi-linux"
+  timeout: 15
+  docker:
+    image: trialyq2ase.jfrog.io/docker-local/cmake-cross:latest
+    credentialId: artifactory-creds
+
+custom:
+  buildScript: build-scripts/component/cmake-build.sh
+  env:
+    SOURCE_DIR: .
+    BUILD_DIR: build
+    BUILD_TYPE: Release
+    TOOLCHAIN_FILE: /opt/toolchains/aarch64-linux-gnu.cmake
+
+stages:
+  - checkout
+  - build
+  - publish
+  - notify

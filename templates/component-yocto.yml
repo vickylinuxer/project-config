@@ -1,0 +1,43 @@
+# Yocto component pipeline template
+# For standalone Yocto BSP or SDK builds in component mode
+# Paths are relative to workspace — resolved automatically by pipeliner
+mode: component
+
+# Build scripts repo — pipeliner clones this before build
+buildScripts:
+  url: https://git.example.com/org/build-scripts.git
+  branch: main
+
+project:
+  name: my-yocto-bsp           # project directory name under subsystems/
+  repoUrl: https://git.example.com/org/my-yocto-bsp.git
+  type: yocto
+  buildType: ci                 # ci | nightly | release
+
+environment:
+  agent: "linux docker x86_64"
+  timeout: 300
+  docker:
+    image: trialyq2ase.jfrog.io/docker-local/yocto-builder:latest
+    credentialId: artifactory-creds
+
+yocto:
+  buildScript: build-scripts/integration/yocto-build.sh
+  machine: raspberrypi4-64
+  image: core-image-minimal
+  # sstateMirror: cache/yocto/sstate-mirror    # shared read-only sstate cache
+
+cache:
+  - type: sstate
+    src: cache/yocto/sstate
+
+# Git adapter for build status notifications
+git:
+  type: bitbucket
+  url: https://bitbucket.org
+  credentialId: git-creds
+
+stages:
+  - checkout
+  - build
+  - notify

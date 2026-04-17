@@ -1,0 +1,41 @@
+# Custom component pipeline template
+# For firmware, drivers, or application builds using CMake/Make/Meson/Bazel
+# Paths are relative to workspace — resolved automatically by pipeliner
+mode: component
+
+# Build scripts repo — pipeliner clones this before build
+buildScripts:
+  url: https://git.example.com/org/build-scripts.git
+  branch: main
+
+project:
+  name: my-component           # project directory name under subsystems/
+  repoUrl: https://git.example.com/org/my-component.git
+  type: custom
+  buildType: ci                # ci | nightly | release
+
+environment:
+  agent: "linux docker x86_64"
+  timeout: 15
+  docker:
+    image: trialyq2ase.jfrog.io/docker-local/cmake-cross:latest
+    credentialId: artifactory-creds
+
+custom:
+  buildScript: build-scripts/component/cmake-build.sh
+  args: "--toolchain /opt/toolchains/aarch64-linux-gnu.cmake"
+  env:
+    SOURCE_DIR: projects/my-component
+    BUILD_DIR: build
+
+# Git adapter for build status notifications
+git:
+  type: bitbucket
+  url: https://bitbucket.org
+  credentialId: git-creds
+
+stages:
+  - checkout
+  - build
+  - publish
+  - notify

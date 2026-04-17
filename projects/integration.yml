@@ -1,0 +1,19 @@
+mode: integration
+workspace: /mnt/workspace/audioi2
+cleanWorkspace: true
+
+manifest:
+  url: http://forgejo:3000/audioi/integration-manifest.git
+  branch: main
+  reference: /mnt/workspace/mirrors/reference
+
+mirrors:
+  reference: /mnt/workspace/mirrors/reference
+
+stages: [checkout, build, notify]
+failFast: true
+
+subsystems:
+  - custom-firmware
+  - yocto-bsp
+  - aosp-platform

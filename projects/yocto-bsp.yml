@@ -1,0 +1,35 @@
+project:
+  name: yocto-bsp
+  type: yocto
+  buildType: ci
+
+environment:
+  agent: "audioi-linux"
+  timeout: 300
+  docker:
+    image: trialyq2ase.jfrog.io/docker-local/yocto-builder:latest
+    credentialId: artifactory-creds
+
+yocto:
+  buildScript: build-scripts/integration/yocto-build.sh
+
+cache:
+  - type: sstate
+    src: cache/yocto/sstate
+  - type: downloads
+    src: cache/yocto/downloads
+
+artifacts:
+  type: artifactory
+  url: https://trialyq2ase.jfrog.io
+  credentialId: artifactory-creds
+  defaultRepo: test
+
+publish:
+  artifacts:
+    - pattern: "yocto/build/tmp/deploy/images/**/*.wic.bz2"
+      repo: test
+    - pattern: "yocto/build/tmp/deploy/images/**/*.manifest"
+      repo: test
+
+stages: [checkout, build, publish, notify]

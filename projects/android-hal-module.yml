@@ -1,0 +1,38 @@
+# Component pipeline: Android HAL module built with NDK
+mode: component
+
+buildScripts:
+  url: https://git.example.com/org/build-scripts.git
+  branch: main
+
+project:
+  name: android-hal-module
+  repoUrl: https://git.example.com/org/android-hal-module.git
+  type: custom
+  buildType: ci
+
+workspace: /mnt/workspace
+
+environment:
+  agent: "audioi-android"
+  timeout: 30
+  docker:
+    image: trialyq2ase.jfrog.io/docker-local/aosp-builder:latest
+    credentialId: artifactory-creds
+
+custom:
+  buildScript: build-scripts/component/android-ndk-build.sh
+  args: "--cmake"
+  env:
+    ANDROID_NDK: /opt/android-ndk-r26d
+    ANDROID_ABI: arm64-v8a
+    ANDROID_PLATFORM: android-30
+    SOURCE_DIR: subsystems/android-hal-module
+    BUILD_DIR: build
+    BUILD_TYPE: Release
+
+stages:
+  - checkout
+  - build
+  - publish
+  - notify

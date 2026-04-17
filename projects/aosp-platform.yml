@@ -1,0 +1,21 @@
+project:
+  name: aosp-platform
+  type: aosp
+  buildType: ci
+
+environment:
+  agent: "audioi-android"
+  timeout: 720
+  docker:
+    image: trialyq2ase.jfrog.io/docker-local/aosp-builder:latest
+    credentialId: artifactory-creds
+
+aosp:
+  buildScript: build-scripts/integration/aosp-build.sh
+
+cache:
+  - type: ccache
+    src: cache/aosp/ccache
+    maxSize: 20G
+
+stages: [checkout, build, notify]

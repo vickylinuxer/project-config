@@ -1,0 +1,34 @@
+# Integration pipeline template
+# Syncs sources from a repo manifest, builds all subsystems in parallel
+mode: integration
+
+manifest:
+  url: https://git.example.com/org/integration-manifest.git
+  branch: main
+  # reference: mirrors/reference         # local mirror for faster clones (relative to workspace)
+
+mirrors:
+  reference: mirrors/reference          # relative to workspace
+
+environment:
+  timeout: 720                          # global timeout for all subsystems (minutes)
+  # minDiskGB: 50                       # fail early if disk below this
+
+# cleanup:
+#   afterBuild: true                    # clean intermediate artifacts on success
+#   keepArtifacts: true                 # skip dirs marked fullCleanOnly
+#   dirs:                               # paths relative to workspace
+#     - path: yocto/build/tmp/work
+#       label: Yocto tmp/work
+#     - path: out
+#       label: AOSP out
+#       fullCleanOnly: true
+
+# metrics:
+#   export: true
+#   endpoint: https://metrics.example.com/api/v1/builds
+
+subsystems:
+  - custom-firmware
+  - yocto-bsp
+  # - aosp-platform
