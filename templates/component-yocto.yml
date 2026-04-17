@@ -25,12 +25,6 @@ yocto:
   buildScript: build-scripts/integration/yocto-build.sh
   machine: raspberrypi4-64
   image: core-image-minimal
-  # sstateMirror: cache/yocto/sstate-mirror    # shared read-only sstate cache
-
-cache:
-  - type: sstate
-    src: cache/yocto/sstate
-
 # Git adapter for build status notifications
 git:
   type: bitbucket

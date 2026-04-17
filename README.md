@@ -43,11 +43,11 @@ subsystems:
   - aosp-platform
 ```
 
-Each subsystem name maps to a `projects/<name>.yml` file with its own build config, Docker image, cache settings, and build script reference.
+Each subsystem name maps to a `projects/<name>.yml` file with its own build config, Docker image, and build script reference.
 
 ## Subsystem Config
 
-Each subsystem specifies its builder type, Docker image, build script, and cache/artifact settings:
+Each subsystem specifies its builder type, Docker image, build script, and artifact settings:
 
 ```yaml
 project:
@@ -65,12 +65,6 @@ environment:
 yocto:
   buildScript: build-scripts/integration/yocto-build.sh
 
-cache:
-  - type: sstate
-    src: cache/yocto/sstate
-  - type: downloads
-    src: cache/yocto/downloads
-
 publish:
   artifacts:
     - pattern: "yocto/build/tmp/deploy/images/**/*.wic.bz2"
@@ -78,12 +72,6 @@ publish:
 
 stages: [checkout, build, publish, notify]
 ```
-
-## Path Resolution
-
-Cache and mirror paths can be relative or absolute:
-- **Relative paths** (e.g., `cache/yocto/sstate`) are resolved relative to the workspace root
-- **Absolute paths** (e.g., `/mnt/workspace/cache/yocto/sstate`) are used as-is
 
 ## Templates
 

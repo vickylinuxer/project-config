@@ -7,9 +7,6 @@ manifest:
   branch: main
   reference: /mnt/workspace/mirrors/reference
 
-mirrors:
-  reference: /mnt/workspace/mirrors/reference
-
 stages: [checkout, build, notify]
 failFast: true
 

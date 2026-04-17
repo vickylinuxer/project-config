@@ -13,9 +13,4 @@ environment:
 aosp:
   buildScript: build-scripts/integration/aosp-build.sh
 
-cache:
-  - type: ccache
-    src: cache/aosp/ccache
-    maxSize: 20G
-
 stages: [checkout, build, notify]
