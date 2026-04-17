@@ -12,7 +12,7 @@ project:
   type: custom
   buildType: ci
 
-workspace: /mnt/workspace
+workspace: /var/jenkins/workspace/component
 
 environment:
   agent: "audioi-linux"

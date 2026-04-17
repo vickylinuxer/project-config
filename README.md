@@ -26,7 +26,7 @@ project-config/
 
 ```yaml
 mode: integration
-workspace: /mnt/workspace/audioi2
+workspace: /var/jenkins/workspace/integration
 cleanWorkspace: true
 
 manifest:
